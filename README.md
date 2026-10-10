@@ -1,6 +1,6 @@
 # RS3 Ports Crew Optimizer
 
-**[▶ Open the calculator]((https://alexswiderek.github.io/rs3-ports-calculator/))**
+**[▶ Open the calculator](https://alexswiderek.github.io/rs3-ports-calculator/)**
 
 A calculator for RuneScape 3 Player-owned Ports. Enter your crew, your unlocked ship parts and a voyage's required stats, and it finds the captain, crew and parts with the highest chance of success. That saves you the trial and error of testing combinations in the game.
 
