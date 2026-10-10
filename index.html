@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ports Crew Optimizer</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f4ef;--card:#fff;--tx:#1d2330;--mut:#6a7080;--ln:#dcd8cd;--ac:#1d6f8a;--ok:#2f8f4e;--warn:#c47a12;--bad:#c0392b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161d;--card:#1b212b;--tx:#e8eaee;--mut:#99a0ae;--ln:#2d3541;--ac:#5bb6d4;--ok:#58c07a;--warn:#e0a040;--bad:#e5695b}}
+:root[data-theme="dark"]{--bg:#12161d;--card:#1b212b;--tx:#e8eaee;--mut:#99a0ae;--ln:#2d3541;--ac:#5bb6d4;--ok:#58c07a;--warn:#e0a040;--bad:#e5695b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:0 0 4px}h2{font-size:1rem;margin:0 0 10px}
+.mut{color:var(--mut);font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+label{display:block;font-size:.8rem;color:var(--mut)}
+input,select{width:100%;padding:7px 8px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+input[type=checkbox]{width:auto}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:780px}
+th{font-size:.75rem;color:var(--mut);text-align:left;padding:2px 4px}
+td{padding:3px 4px}
+td input[type=number]{width:72px}
+button{padding:8px 14px;border-radius:8px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font:inherit;cursor:pointer}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600;margin-top:12px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.big{font-size:2.2rem;font-weight:700}
+.bar{height:10px;background:var(--ln);border-radius:6px;overflow:hidden;margin:3px 0 10px}
+.bar i{display:block;height:100%}
+.row{display:flex;justify-content:space-between;font-size:.9rem}
+ul{margin:6px 0;padding-left:20px}
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 12px;margin-bottom:8px}
+.pg label{display:flex;gap:6px;align-items:center;color:var(--tx);font-size:.85rem}
+.pg label span{color:var(--mut);font-size:.75rem}
+h3{font-size:.9rem;margin:10px 0 4px}
+h3 a{font-weight:400;font-size:.8rem;color:var(--ac);cursor:pointer;margin-left:10px}
+</style></head>
+<body><main>
+<h1>Ports Crew Optimizer</h1>
+<p class="mut">Enter your roster once (it's saved in this browser), enter a voyage's needed stats, and get the crew with the best success chance. Success = your lowest stat ratio across Morale, Combat and Seafaring, capped at 100%.</p>
+
+<section class="card"><h2>Unlocked ship parts</h2><p class="mut" style="margin-top:-6px">Tick what you've unlocked (starter parts are always available). Parts are free to swap, so the optimizer picks the best set for each voyage.</p><div id="parts"></div></section>
+
+<section class="card"><h2>Shipwright bonus</h2>
+<p class="mut" style="margin-top:-6px">Percent boost applied to each stat's total (parts + captain + crew). Pick your current shipwright, or type the totals yourself.</p>
+<div class="grid">
+<div><label>Shipwright<select id="swp"><option value="">Custom</option><option value="0,0,0,0">None</option><option value="2,2,2,2">Refitted (2%)</option><option value="3,3,3,3">Renovated (3%)</option><option value="3,3,5,3">Nautical (3% + 2% Seafaring)</option><option value="3,5,3,3">Warship (3% + 2% Combat)</option><option value="5,3,3,3">Luxurious (3% + 2% Morale)</option><option value="8,5,5,5">Ostentatious (5% + 3% Morale)</option><option value="5,8,5,5">Battleship (5% + 3% Combat)</option><option value="5,5,8,5">Maritime (5% + 3% Seafaring)</option></select></label></div>
+<div><label>Morale %<input id="sm" type="number" min="0" step="any"></label></div>
+<div><label>Combat %<input id="sc" type="number" min="0" step="any"></label></div>
+<div><label>Seafaring %<input id="ss" type="number" min="0" step="any"></label></div>
+
+</div></section>
+
+<section class="card"><h2>Roster</h2>
+<p class="mut" style="margin-top:-6px">Use each member's displayed stats (level and traits included). Tick Busy for anyone out on a voyage. Fill in each crew member's Type so Solidarity (First Mate, Eastern Overseer, Bureaucrat, Judge of Dice, Kharidian Exile) is counted; leave captains' Type blank.</p>
+<datalist id="types"><option value="Travelling Drunk"><option value="Stowaway"><option value="Smuggler"><option value="Varrock Chef"><option value="Brimhaven Pirate"><option value="Catherby Fisherman"><option value="Dwarven Engineer"><option value="Ardougne Storekeeper"><option value="Bamboo Golem"><option value="First Mate"><option value="Cyclops"><option value="Eastern Bannerman"><option value="Eastern Musketeer"><option value="Eastern Guide"><option value="Fireworks Enthusiast"><option value="Palmist"><option value="Exploding Golem"><option value="Eastern Overseer"><option value="Siren Whalerider"><option value="Blazing Lantern Clansman"><option value="Golden Katana Clansman"><option value="Storm Riders Clansman"><option value="Firework Expert"><option value="Trader"><option value="Soothsayer"><option value="Slate Golem"><option value="Feral Chimera"><option value="Card Sharp"><option value="Crows' Nest Sniper"><option value="Cartographer"><option value="Explosives Expert"><option value="Merchant"><option value="Cherrywood Golem"><option value="Bureaucrat"><option value="Sea Witch"><option value="Farcrier"><option value="Bounty Hunter"><option value="Sea Dog"><option value="Firework Maniac"><option value="Jade Merchant"><option value="Sacrificial Soothsayer"><option value="Jade Golem"><option value="Judge of Dice"><option value="Travelling Band"><option value="Ferocious Tiger-Rider"><option value="Harem of Fortune Tellers"><option value="Oxhead and Horseface"><option value="Party Animal"><option value="Sea-fort Guard"><option value="Pearl Diver"><option value="Reef Rider"><option value="Terracotta Merchant"><option value="Wisp"><option value="Zhonghu Player"><option value="Gu Bodyguard"><option value="Stargazer"><option value="Azure Golem"><option value="Kharidian Exile"></datalist><div class="scroll"><table><thead><tr><th>Busy</th><th>Name</th><th>Role</th><th>Type</th><th>Morale</th><th>Combat</th><th>Seafaring</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="btns"><button id="addCrew">+ Crew</button><button id="addCap">+ Captain</button><button id="clearBusy">Clear busy</button></div>
+</section>
+
+<section class="card"><h2>Voyage needs</h2>
+<div class="grid">
+<div><label>Morale<input id="rm" type="number" min="0"></label></div>
+<div><label>Combat<input id="rc" type="number" min="0"></label></div>
+<div><label>Seafaring<input id="rs" type="number" min="0"></label></div>
+<div><label>If 100% is reachable<select id="tie"><option value="max">Highest stat totals</option><option value="save">Use weakest crew</option></select></label></div>
+<div><label title="Points the game adds on top of total / requirement. 10 fits a voyage showing 87% at 2708/3500.">Game success bonus (pts)<input id="bn" type="number" step="any"></label></div>
+</div>
+<button class="pri" id="go">Find best crew</button>
+</section>
+
+<section class="card" id="out" hidden></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const KEY='pop-optimizer-v1';
+let S={sw:{m:0,c:0,s:0,v:0},crew:[],bonus:10,tie:'max',req:{m:0,c:0,s:0}};
+try{const x=localStorage.getItem(KEY);if(x)S=Object.assign(S,JSON.parse(x))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const nm=i=>{const x=S.crew[i];return x.n||((x.r==='cap'?'Captain':'Crew')+' #'+(i+1))};
+
+[['sm','sw','m'],['sc','sw','c'],['ss','sw','s'],['rm','req','m'],['rc','req','c'],['rs','req','s']].forEach(([id,g,k])=>{
+  const el=$(id);el.value=S[g][k]||'';
+  el.addEventListener('input',()=>{S[g][k]=num(el.value);save()});
+});
+$('bn').value=S.bonus||'';
+$('bn').addEventListener('input',()=>{S.bonus=num($('bn').value);save()});
+$('tie').value=S.tie==='save'?'save':'max';
+$('tie').onchange=()=>{S.tie=$('tie').value;save()};
+
+function render(){
+  $('rows').innerHTML=S.crew.map((x,i)=>`<tr data-i="${i}"><td><input type="checkbox" data-f="b" ${x.b?'checked':''}></td><td><input data-f="n" value="${esc(x.n||'')}" placeholder="Name"></td><td><select data-f="r"><option value="crew"${x.r==='crew'?' selected':''}>Crew</option><option value="cap"${x.r==='cap'?' selected':''}>Captain</option></select></td><td><input data-f="t" list="types" value="${esc(x.t||'')}" placeholder="Type"></td>`
+  +['m','c','s'].map(f=>`<td><input type="number" data-f="${f}" value="${x[f]||''}"></td>`).join('')
+  +`<td><button data-del title="Remove">✕</button></td></tr>`).join('');
+}
+$('rows').addEventListener('input',e=>{
+  const t=e.target,f=t.dataset.f;if(!f)return;
+  const x=S.crew[t.closest('tr').dataset.i];
+  x[f]=(f==='n'||f==='r'||f==='t')?t.value:f==='b'?t.checked:num(t.value);save();
+});
+$('rows').addEventListener('click',e=>{
+  if(!e.target.hasAttribute('data-del'))return;
+  S.crew.splice(+e.target.closest('tr').dataset.i,1);save();render();
+});
+const add=r=>{S.crew.push({n:'',t:'',r,m:0,c:0,s:0,v:0,b:false});save();render()};
+$('addCrew').onclick=()=>add('crew');
+$('addCap').onclick=()=>add('cap');
+$('clearBusy').onclick=()=>{S.crew.forEach(x=>x.b=false);save();render()};
+
+const PARTS={
+fig:[["Weathered Ram",0,50,0,0,1],["Polished Figurehead",100,0,0,0],["Sturdy Ram",0,100,0,0],["Enchanted Figurehead",200,0,0,0],["Reinforced Ram",0,200,0,0],["Skeletal Figurehead",350,0,0,0],["Armoured Ram",0,350,0,0],["Ghostly Figurehead",500,0,0,0],["Battle Ram",0,500,0,0],["Intrepid Figurehead",600,0,0,0],["War Ram",0,600,0,0],["Inspiring Figurehead",800,0,0,0],["Spitfire Cannon",0,800,0,0],["Figurehead of the Spires",950,0,100,0],["Ram of the Bladewing",0,1100,0,0]],
+deck:[["Weathered Rigging",0,0,100,0,1],["Small Crate of Food",100,0,0,0],["Sturdy Rigging",0,0,200,0],["Large Crate of Food",200,0,0,0],["Single Cannon",0,200,0,0],["Entwined Rigging",0,0,450,0],["Small Crate of Riches",450,0,0,0],["Cannon x2",0,450,0,0],["Oxskin Rigging",0,0,700,0],["Large Crate of Riches",700,0,0,0],["Heavy Cannon x2",0,700,0,0],["Ornate Rigging",0,0,1000,0],["Eastern Artefacts",1000,0,0,0],["Cannon x3",0,1000,0,0],["Whaleskin Rigging",0,0,1200,0],["Eastern Treasures",1200,0,0,0],["Cannon x4",0,1200,0,0],["Dragonskin Rigging",0,0,1350,0],["Eastern Relics",1350,0,0,0],["Heavy Cannon x4",0,1350,0,0],["Overwhelmingly Large Cannon x4",0,1750,0,0],["Bladewing Rigging",0,0,2000,0],["Fineglow Lanterns",2000,0,0,0]],
+hull:[["Barnacled Hull",50,50,100,0,1],["Reinforced Hull",100,150,100,50],["Sleek Hull",100,100,150,50],["Battle Hull",200,450,200,100],["Golden Hull",450,200,200,100],["Hull of Tides",300,300,700,200],["Armoured Hull",300,700,300,200],["Hull of Storms",400,400,900,300],["War Hull",400,900,400,300],["Hull of Glory",1200,500,500,400],["Storm Rider Hull",500,500,1200,400],["Golden Katana Hull",500,1400,500,600],["Blazing Lantern Hull",1400,500,500,600],["Blackwater Hull",850,750,1700,200],["Shimmering Azure Hull",1325,1325,1325,150]]
+};
+const TT={fig:'Rams / figureheads',deck:'Deck items (2 slots, repeats allowed)',hull:'Hulls'};
+S.un=S.un||{};
+$('swp').onchange=()=>{const v=$('swp').value;if(!v)return;const a=v.split(',').map(Number);['m','c','s'].forEach((k,i)=>{S.sw[k]=a[i];$('s'+k).value=a[i]||''});save()};
+function renderParts(){
+  $('parts').innerHTML=Object.keys(PARTS).map(g=>`<h3>${TT[g]}<a data-all="${g}">all</a><a data-none="${g}">none</a></h3><div class="pg">`
+  +PARTS[g].map(p=>`<label><input type="checkbox" data-p="${esc(p[0])}" ${p[5]||S.un[p[0]]?'checked':''} ${p[5]?'disabled':''}>${esc(p[0])} <span>${p[1]||p[2]||p[3]?'M'+p[1]+' C'+p[2]+' S'+p[3]:''}</span></label>`).join('')+'</div>').join('');
+}
+$('parts').addEventListener('input',e=>{const n=e.target.dataset.p;if(!n)return;if(e.target.checked)S.un[n]=true;else delete S.un[n];save()});
+$('parts').addEventListener('click',e=>{const d=e.target.dataset,g=d.all||d.none;if(!g)return;PARTS[g].forEach(p=>{if(d.all)S.un[p[0]]=true;else delete S.un[p[0]]});save();renderParts()});
+const SOL={'first mate':25,'eastern overseer':50,'bureaucrat':75,'judge of dice':100,'kharidian exile':125};
+const avail=g=>PARTS[g].filter(p=>p[5]||S.un[p[0]]);
+const ST=[1,2,3];
+function front(l){return l.filter((p,i)=>!l.some((q,j)=>j!==i&&ST.every(k=>q[k]>=p[k])&&(j<i||ST.some(k=>q[k]>p[k]))))}
+function configs(){
+  const F=front(avail('fig')),D=front(avail('deck')),H=front(avail('hull')),out=[];
+  for(const f of F)for(let i=0;i<D.length;i++)for(let j=i;j<D.length;j++)for(const h of H){
+    const ps=[f,D[i],D[j],h],sm=k=>ps.reduce((a,p)=>a+p[k],0);
+    out.push({ps,m:sm(1),c:sm(2),s:sm(3),v:sm(4)});
+  }
+  return out;
+}
+function bestFull(){
+  const K=S.crew,R=S.req,sw=S.sw,base=K.length+1,fm=1+sw.m/100,fc=1+sw.c/100,fs=1+sw.s/100,fv=1+sw.v/100,bn=(S.bonus||0)/100;
+  const idx=K.map((x,i)=>i).filter(i=>!K[i].b);
+  const caps=idx.filter(i=>K[i].r==='cap'),cr=idx.filter(i=>K[i].r==='crew');
+  const X=[],PK=[],CP=[],pick=[];
+  const TY=K.map(x=>String(x.t||'').trim().toLowerCase()),SX=K.map((x,i)=>x.r==='crew'?(SOL[TY[i]]||0):0);
+  const cnt=new Map();let nt=0,mx=0,sv=0;
+  for(const cp of (caps.length?caps:[null])){
+    const c=cp==null?null:K[cp];
+    cnt.clear();nt=cp==null?0:1;mx=0;sv=0;
+    const rec=(st,m,cc,s,v)=>{
+      const b=nt*mx;
+      X.push(m+b,cc+b,s+b,v+nt*sv,m+cc+s);PK.push(pick.reduce((a,i)=>a*base+i+1,0));CP.push(cp==null?-1:cp);
+      if(pick.length>=5)return;
+      for(let j=st;j<cr.length;j++){
+        const i=cr[j],x=K[i],ty=TY[i],xv=SX[i],omx=mx,osv=sv;
+        pick.push(i);
+        if(ty){const k=cnt.get(ty)||0;cnt.set(ty,k+1);if(!k)nt++}
+        if(xv){if(xv>mx)mx=xv;sv+=xv}
+        rec(j+1,m+x.m,cc+x.c,s+x.s,v+x.v);
+        mx=omx;sv=osv;
+        if(ty){const k=cnt.get(ty)-1;if(k)cnt.set(ty,k);else{cnt.delete(ty);nt--}}
+        pick.pop();
+      }
+    };
+    rec(0,c?c.m:0,c?c.c:0,c?c.s:0,c?c.v:0);
+  }
+  const n=CP.length,P=configs(),eps=1e-9;
+  let top=null;
+  for(let pi=0;pi<P.length;pi++){
+    const p=P[pi];
+    for(let i=0,o=0;i<n;i++,o+=5){
+      const a=R.m>0?Math.min(1,(p.m+X[o])*fm/R.m+bn):1,b=R.c>0?Math.min(1,(p.c+X[o+1])*fc/R.c+bn):1,c=R.s>0?Math.min(1,(p.s+X[o+2])*fs/R.s+bn):1;
+      const mn=Math.min(a,b,c);
+      if(top&&mn<top.mn-eps)continue;
+      const full=mn>=0.999999,tot=p.m+X[o]+p.c+X[o+1]+p.s+X[o+2];
+      const k2=!full?a+b+c:S.tie==='save'?-X[o+4]:tot,k3=full?tot:0;
+      if(!top||mn>top.mn+eps||(Math.abs(mn-top.mn)<=eps&&(k2>top.k2+eps||(Math.abs(k2-top.k2)<=eps&&k3>top.k3+eps))))top={mn,k2,k3,pi,i,a,b,c};
+    }
+  }
+  const o=top.i*5,p=P[top.pi];
+  let pk=PK[top.i];const picks=[];
+  while(pk>0){picks.push(pk%base-1);pk=Math.floor(pk/base)}
+  const ch=picks.reverse(),ts=new Set();
+  if(CP[top.i]>=0)ts.add('#captain');
+  let smx=0,ssv=0;ch.forEach(i=>{if(TY[i])ts.add(TY[i]);smx=Math.max(smx,SX[i]);ssv+=SX[i]});
+  return{mn:top.mn,r:[top.a,top.b,top.c],t:[Math.floor((p.m+X[o])*fm+1e-9),Math.floor((p.c+X[o+1])*fc+1e-9),Math.floor((p.s+X[o+2])*fs+1e-9),Math.floor((p.v+X[o+3])*fv+1e-9)],cp:CP[top.i]<0?null:CP[top.i],pick:ch,parts:p.ps,sol:{nt:ts.size,mx:smx,sv:ssv}};
+}
+
+$('go').onclick=()=>{
+  const out=$('out');out.hidden=false;
+  const R=S.req;
+  if(!(R.m||R.c||R.s)){out.innerHTML='<p>Enter at least one voyage requirement first.</p>';return}
+  if(!S.crew.some(x=>!x.b)){out.innerHTML='<p>Add some crew to your roster first (or clear the Busy ticks).</p>';return}
+  const r=bestFull();
+  const pct=Math.floor(r.mn*1000)/10;
+  const col=r.mn>=1?'var(--ok)':r.mn>=0.75?'var(--warn)':'var(--bad)';
+  const stats=[['Morale',0],['Combat',1],['Seafaring',2]],need=[R.m,R.c,R.s];
+  let h=`<div class="big" style="color:${col}">${pct}%</div><div class="mut">success chance</div><div style="margin-top:12px">`;
+  stats.forEach(([n,i])=>{
+    const rr=r.r[i];
+    h+=`<div class="row"><span>${n}</span><span>${r.t[i]} / ${need[i]||0} (${Math.floor(rr*100)}%)</span></div><div class="bar"><i style="width:${rr*100}%;background:${rr>=1?'var(--ok)':'var(--warn)'}"></i></div>`;
+  });
+  h+='</div>';
+  if(r.mn<1){
+    const li=r.r.indexOf(r.mn);
+    h+=`<p><b>Limiting stat: ${stats[li][0]}</b>, short by ${Math.ceil(need[li]*(1-(S.bonus||0)/100)-r.t[li])}.</p>`;
+  }
+  const line=i=>{const x=S.crew[i];return `<li><b>${esc(nm(i))}</b> <span class="mut">M ${x.m||0} · C ${x.c||0} · S ${x.s||0} · Spd ${x.v||0}</span></li>`};
+  h+='<h2>Ship parts</h2><ul>'+r.parts.map((p,i)=>'<li><span class="mut">'+['Ram / figurehead','Deck 1','Deck 2','Hull'][i]+'</span> <b>'+esc(p[0])+'</b></li>').join('')+'</ul><h2>Assign</h2><ul>'+(r.cp==null?'<li class="mut">No captain in roster</li>':'<li class="mut">Captain</li>'+line(r.cp))+'</ul><ul><li class="mut">Crew</li>'+r.pick.map(line).join('')+'</ul>';
+  if(r.sol.mx)h+=`<p class="mut">Solidarity: ${r.sol.nt} crew types × ${r.sol.mx} = +${r.sol.nt*r.sol.mx} to Morale, Combat and Seafaring (before shipwright %)</p>`;
+  h+=`<div class="btns"><button id="mark">Mark these crew busy</button></div>`;
+  out.innerHTML=h;
+  $('mark').onclick=()=>{
+    if(r.cp!=null)S.crew[r.cp].b=true;
+    r.pick.forEach(i=>S.crew[i].b=true);
+    save();render();$('mark').textContent='Marked busy ✓';$('mark').disabled=true;
+  };
+};
+render();renderParts();
+</script></body></html>
